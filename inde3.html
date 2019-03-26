@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<title>Title</title>
+		<link rel="stylesheet" href="http://cdn.bootcss.com/bootstrap/2.3.2/css/bootstrap.min.css">
+		<script type="text/javascript" src="./CryptoJS/core.js"></script>
+		<script type="text/javascript" src="./CryptoJS/enc-base64.js"></script>
+		<script type="text/javascript" src="./CryptoJS/cipher-core.js"></script>
+		<script type="text/javascript" src="./CryptoJS/aes.js"></script>
+		<script src="./CryptoJS/mode-ecb.js"></script>
+		<script src="./CryptoJS/pad-nopadding.js"></script>
+		<script src="./CryptoJS/crypto-js.js"></script>
+		<style>
+		
+			.demo-wrap {
+				margin: 25px;
+			}
+			
+			input[type="text"] {
+				margin-bottom: 0px;
+			}
+			.input{
+				width: 100%;
+			}
+			
+		</style>
+	</head>
+
+	<body>
+		<div class="demo-wrap">
+			<div class="controls">
+				<input class="input" type="text" id="data-ipt" value="00fafa0004040201c1100a0b0c0d0e0f" placeholder="input something…" />
+				<a class="btn btn-primary" onclick="getAES();"><i class="icon-eye-close icon-white"></i>AES加密</a>
+				<a class="btn btn-primary" onclick="getDAes();"><i class="icon-eye-open icon-white"></i>AES解密</a>
+			</div>
+			<div class="controls">
+				加密后的数据:<span id="encrypted"></span>
+			</div>
+			<div class="controls">
+				解密后的数据:<span id="decrypted"></span>
+			</div>
+		</div>
+		<script>
+//			function aesKeyBytes() {
+//				var key_Int = new Int8Array(['K', 'M', '1', '9', '3', '0', 'P', 'e', 'd', 'o', 'm', 'e', 't', 'e', 'r', '!']);
+//				var keyBytes = int8parse(key_Int);
+//				return keyBytes;
+//			}
+			var key =  CryptoJS.enc.Utf8.parse('KM1930Pedometer!'); //密钥
+			// key = aesKeyBytes(); //密钥
+			var iv = key;
+			var padding = CryptoJS.pad.NoPadding;
+			// padding = CryptoJS.pad.Pkcs7;
+			// var mode = CryptoJS.mode.ECB;
+			var mode = CryptoJS.mode.CBC;
+			function getAesString(data, key, iv) { //加密			
+				//  CryptoJS.enc.Hex.parse
+				//  CryptoJS.enc.Utf8.parse
+				// CryptoJS.enc.Latin1.parse
+				// data = hexStrToDecArray(data);
+				// data = int8parse(data);
+				data = CryptoJS.enc.Hex.parse(data);
+				// data = CryptoJS.enc.Utf8.parse(data);
+				// key = int8parse(key);
+				// key = CryptoJS.enc.Hex.parse(key);
+				// key = CryptoJS.enc.Utf8.parse(key);
+
+				// key = hexStrToDecArray(key);
+				// iv = int8parse(iv);
+				// iv = CryptoJS.enc.Hex.parse(iv);
+				// iv = CryptoJS.enc.Utf8.parse(iv);
+
+				console.log("秘钥：" + "" + typeof(iv) + JSON.toString(iv));
+				// iv = hexStrToDecArray(iv);
+				var encrypted = CryptoJS.AES.encrypt(data, key, {
+					iv: iv,
+					mode: mode,
+					padding: padding
+				});
+				return wordArrayToHexStr(encrypted.ciphertext.words);
+			}
+
+			function getDAesString(str, key, iv) { //解密
+				// key = hexStrToDecArray(key);
+				// key = int8parse(key);
+				// key = CryptoJS.enc.Hex.parse(key);
+				// iv = hexStrToDecArray(iv);
+				// iv = int8parse(iv);
+				// iv = CryptoJS.enc.Hex.parse(iv);
+				str = hexStrToDecArray(str);
+				str = int8parse(str);
+				str = CryptoJS.enc.Base64.stringify(str);
+				var decrypted = CryptoJS.AES.decrypt(str, key, {
+					iv: iv,
+					mode: mode,
+					padding: padding
+				});
+				return wordArrayToHexStr(decrypted.words);
+			}
+
+			function getAES() { //加密
+				var data = document.getElementById("data-ipt").value; //明文
+				var encrypted = getAesString(data, key, iv); //密文
+				document.getElementById("encrypted").innerHTML = encrypted;
+			}
+
+			function getDAes() { //解密
+				var encrypted = document.getElementById("encrypted").innerHTML; //密文
+				var decryptedStr = getDAesString(encrypted, key, iv);
+				document.getElementById("decrypted").innerHTML = decryptedStr;
+			}
+			// 构建WordArray对象
+			function int8parse(u8arr) {
+				var len = u8arr.length;
+				var words = [];
+				for (var i = 0; i < len; i++) {
+					words[i >>> 2] |= (u8arr[i] & 0xff) << (24 - (i % 4) * 8);
+				}
+				return CryptoJS.lib.WordArray.create(words, len);
+			}
+
+			// 十六进制字符串(空格分割)转成十进制数字的数组
+			function hexStrToDecArray(str) {
+				var strArray = str.split(" ");
+				var decArray = [];
+				for (var i = 0; i < strArray.length; i++) {
+					decArray.push(parseInt(strArray[i], 16));
+				}
+				return arrayTo16Array(decArray);
+			}
+			// 数组元素个数必须是16的整数倍，不足的在后面补0
+			function arrayTo16Array(array) {
+				var len = array.length;
+				var distLen = parseInt((array.length - 1) / 16) * 16 + 16;
+				for (var i = array.length; i < distLen; i++) {
+					array[i] = 0;
+				}
+				return array;
+			}
+			// 十进制数组转成十六进制字符串
+			function decArrayToHexStr(array) {
+				var hexStr = "";
+				for (var i = 0; i < array.length; i++) {
+					var str = array[i].toString(16).toUpperCase();
+					if (str.length < 2) {
+						str = "0" + str;
+					}
+					hexStr = hexStr + str + " ";
+				}
+				return hexStr.substr(0, hexStr.length - 1);
+			}
+
+			// word类型的十进制数组转成十六进制字符串
+			function wordArrayToHexStr(array) {
+				var hexStr = "";
+				for (var i = 0; i < array.length; i++) {
+					var num = array[i];
+					console.log("" + i + "  " + num)
+					if (num < 0) {
+						num = array[i] + 0x100000000;
+					}
+					var str = num.toString(16).toUpperCase();
+					var fullStr = str;
+					if (str.length < 8) {
+						for (var j = 0; j < 8 - str.length; j++) {
+							fullStr = "0" + fullStr;
+						}
+					}
+					hexStr = hexStr + fullStr;
+				}
+				var ret = "";
+				for (var i = 0; i < hexStr.length; i += 2) {
+					ret = ret + hexStr.substr(i, 2) + " "
+				}
+				return ret.substr(0, ret.length - 1);
+			}
+		</script>
+	</body>
+
+</html>
